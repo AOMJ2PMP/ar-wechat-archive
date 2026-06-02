@@ -1,14 +1,10 @@
-# wewe-rss feeds to sync — one MP_ID per line. Lines starting with # are ignored.
+# wewe-rss feeds to sync — one MP_ID per line. Trailing "# ..." comments are stripped.
+# Source: https://ar-wechat.zeabur.app/dash/feeds  (the MP_WXS_… is in each feed's URL)
 #
-# Get each MP_ID from your wewe-rss dashboard URL:
-#   https://ar-wechat.zeabur.app/dash/feeds/MP_WXS_xxxxxxxxxx   ← the MP_WXS_... part
-#
-# Accounts currently in this archive (fill in the MP_WXS_ id, then uncomment):
-# 腾讯云
-# 腾讯云出海服务
-# 腾讯CodeBuddy
-#
-# Example (replace with your real ids, one per line, no leading #):
-# MP_WXS_1234567890
-# MP_WXS_0987654321
-# MP_WXS_1122334455
+# NOTE: the sync is NOT strictly per-feed — it pulls recent articles across the whole
+# wewe-rss instance, so personal subscriptions can leak in. The Action's
+# "Drop non-allowlisted accounts" step removes anything outside the 4 accounts below.
+MP_WXS_2390803780   # 腾讯云
+MP_WXS_3896824329   # 腾讯云出海服务
+MP_WXS_3900689280   # 腾讯CodeBuddy
+MP_WXS_3896052917   # 腾讯云原生  (new 2026-06; wewe-rss history not yet fetched → 0 articles so far)

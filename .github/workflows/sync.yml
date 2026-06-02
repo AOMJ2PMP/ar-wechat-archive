@@ -87,6 +87,16 @@ jobs:
             echo "::warning::feeds.txt has no MP_IDs yet — populate it to enable syncing."
           fi
 
+      - name: Drop non-allowlisted accounts (sync is not strictly per-feed)
+        run: |
+          for d in output_by_account/*/; do
+            n=$(basename "$d")
+            case "$n" in
+              腾讯云|腾讯云出海服务|腾讯CodeBuddy|腾讯云原生) ;;
+              *) echo "dropping non-allowlisted account: $n"; rm -rf "$d" ;;
+            esac
+          done
+
       - name: Caption new images (Claude vision → 【图注】)
         if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: |
