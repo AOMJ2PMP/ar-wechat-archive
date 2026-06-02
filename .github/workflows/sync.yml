@@ -23,6 +23,9 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      # Optional: set this repo secret to enable AI image captions (【图注】).
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - name: Checkout archive (this repo)
         uses: actions/checkout@v4
@@ -84,13 +87,19 @@ jobs:
             echo "::warning::feeds.txt has no MP_IDs yet — populate it to enable syncing."
           fi
 
-      - name: Commit & push new articles (markdown only; images are gitignored)
+      - name: Caption new images (Claude vision → 【图注】)
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        run: |
+          python3 -m pip install --quiet --upgrade anthropic pillow
+          python3 scripts/caption_images.py --root output_by_account
+
+      - name: Commit & push new articles + captions
         run: |
           git config user.name "wechat-sync-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A output_by_account
           if git diff --cached --quiet; then
-            echo "no new articles"
+            echo "nothing new"
           else
             n=$(git diff --cached --name-only | grep -c '\.md$' || true)
             git commit -m "sync: $(date -u +%F) — ${n} changed markdown file(s)"
