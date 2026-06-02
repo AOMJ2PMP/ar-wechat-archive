@@ -1,0 +1,98 @@
+name: sync-wechat-archive
+
+# Pulls new WeChat articles from the wewe-rss instance, converts to Markdown,
+# and commits any new ones to this repo. Runs daily + on manual dispatch.
+#
+# One-time setup (see README):
+#   - Secret  WEWERSS_AUTH_CODE  = your wewe-rss AUTH_CODE
+#   - Var     WEWERSS_BASE_URL   = your wewe-rss URL (defaults to the one below)
+#   - feeds.txt populated with one MP_WXS_... id per line
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # 01:00 UTC ≈ 09:00 Asia/Shanghai
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wechat-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout archive (this repo)
+        uses: actions/checkout@v4
+
+      - name: Checkout scraper
+        uses: actions/checkout@v4
+        with:
+          repository: AOMJ2PMP/wechat-feed-to-markdown
+          path: .scraper
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install scraper deps
+        working-directory: .scraper
+        run: uv sync
+
+      - name: Cache Camoufox browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/camoufox
+          key: camoufox-${{ runner.os }}-v1
+
+      - name: Fetch Camoufox browser (fallback path; non-fatal)
+        working-directory: .scraper
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uv run python scripts/fetch_camoufox.py
+
+      - name: Write auth file
+        working-directory: .scraper
+        run: |
+          printf '%s' '${{ secrets.WEWERSS_AUTH_CODE }}' > .auth
+          chmod 600 .auth
+
+      - name: Sync each feed into output_by_account/
+        working-directory: .scraper
+        env:
+          WEWERSS_BASE_URL: ${{ vars.WEWERSS_BASE_URL || 'https://ar-wechat.zeabur.app' }}
+        run: |
+          set -uo pipefail
+          OUT="${GITHUB_WORKSPACE}/output_by_account"
+          mkdir -p "$OUT"
+          count=0
+          while IFS= read -r raw || [ -n "$raw" ]; do
+            mp="${raw%%#*}"
+            mp="$(printf '%s' "$mp" | tr -d '[:space:]')"
+            [ -z "$mp" ] && continue
+            echo "::group::sync $mp"
+            uv run python scripts/sync.py --mp-id "$mp" --output "$OUT" || echo "WARN: sync failed for $mp"
+            echo "::endgroup::"
+            count=$((count + 1))
+          done < "${GITHUB_WORKSPACE}/feeds.txt"
+          echo "processed $count feed(s)"
+          if [ "$count" = "0" ]; then
+            echo "::warning::feeds.txt has no MP_IDs yet — populate it to enable syncing."
+          fi
+
+      - name: Commit & push new articles (markdown only; images are gitignored)
+        run: |
+          git config user.name "wechat-sync-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A output_by_account
+          if git diff --cached --quiet; then
+            echo "no new articles"
+          else
+            n=$(git diff --cached --name-only | grep -c '\.md$' || true)
+            git commit -m "sync: $(date -u +%F) — ${n} changed markdown file(s)"
+            git push
+          fi

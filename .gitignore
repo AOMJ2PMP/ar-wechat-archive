@@ -1,0 +1,13 @@
+# Images are intentionally NOT tracked. The analyst-grounding skill only reads
+# text (it ignores images), so keeping them out makes this repo lightweight and
+# fast to clone. Originals are always reachable via each article's 原文链接.
+# To make this a full mirror instead, delete the two lines below.
+output_by_account/**/images/
+**/images/
+
+# secrets / local scraper state
+.auth
+*.log
+__pycache__/
+.venv/
+.DS_Store

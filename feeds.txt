@@ -1,0 +1,14 @@
+# wewe-rss feeds to sync — one MP_ID per line. Lines starting with # are ignored.
+#
+# Get each MP_ID from your wewe-rss dashboard URL:
+#   https://ar-wechat.zeabur.app/dash/feeds/MP_WXS_xxxxxxxxxx   ← the MP_WXS_... part
+#
+# Accounts currently in this archive (fill in the MP_WXS_ id, then uncomment):
+# 腾讯云
+# 腾讯云出海服务
+# 腾讯CodeBuddy
+#
+# Example (replace with your real ids, one per line, no leading #):
+# MP_WXS_1234567890
+# MP_WXS_0987654321
+# MP_WXS_1122334455
