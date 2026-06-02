@@ -1,9 +1,6 @@
-# Images are intentionally NOT tracked. The analyst-grounding skill only reads
-# text (it ignores images), so keeping them out makes this repo lightweight and
-# fast to clone. Originals are always reachable via each article's 原文链接.
-# To make this a full mirror instead, delete the two lines below.
-output_by_account/**/images/
-**/images/
+# Images ARE tracked (full mirror). Each image is turned into a text 【图注】
+# (AI vision caption) embedded in its article's .md, so the grounding skill can
+# read image content as citable text. See scripts/caption_images.py.
 
 # secrets / local scraper state
 .auth
